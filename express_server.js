@@ -13,6 +13,9 @@ app.get('/', (req, res) => { // register handler on root path, '/'
 app.get('/urls.json', (req, res) => { // add route/endpoint
   res.json(urlDatabase);
 })
+app.get('/hello', (req, res) => { // response can contain HTML code, which render in client browser
+  res.send('<html><body>Hello <b>World</b></body></html>\n');
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
