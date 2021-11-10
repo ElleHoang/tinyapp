@@ -18,6 +18,10 @@ app.get('/urls.json', (req, res) => { // add route/endpoint
 app.get('/hello', (req, res) => { // response can contain HTML code, which render in client browser
   res.send('<html><body>Hello <b>World</b></body></html>\n');
 });
+app.get('/urls', (req, res) => {
+  const templateVars = { urls: urlDatabase };
+  res.render('urls_index', templateVars);
+});
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
