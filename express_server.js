@@ -10,7 +10,7 @@ function generateRandomString() {
     shortURL += chars[Math.floor(Math.random() * chars.length)];
   }
   return shortURL;
-}
+};
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs"); // tells Express app to use EJS as templating engine
@@ -25,7 +25,7 @@ app.get("/", (req, res) => { // register handler on root path(home page), "/"
 });
 app.get("/urls.json", (req, res) => { // add route/endpoint
   res.json(urlDatabase);
-})
+});
 app.get("/hello", (req, res) => { // response can contain HTML code, which render in client browser
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
@@ -41,10 +41,14 @@ app.get("/urls/:shortURL", (req, res) => {
   res.render("urls_show", templateVars)
 });
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  const shortURL = generateRandomString();
+  urlDatabase[shortURL] = req.body.longURL;
+  res.redirect(`/urls/${shortURL}`);
 });
-
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL];
+  res.redirect(longURL);
+});
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
