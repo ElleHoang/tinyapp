@@ -3,6 +3,15 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 
+function generateRandomString() {
+  let shortURL = '';
+  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  for (let i = 0; i < 6; i++) {
+    shortURL += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return shortURL;
+}
+
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs"); // tells Express app to use EJS as templating engine
 
