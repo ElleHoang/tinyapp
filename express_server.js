@@ -2,6 +2,7 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
+const cookieParser = require("cookie-parser");
 
 function generateRandomString() {
   let shortURL = '';
@@ -12,6 +13,7 @@ function generateRandomString() {
   return shortURL;
 };
 
+app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs"); // tells Express app to use EJS as templating engine
 
@@ -57,6 +59,11 @@ app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
   urlDatabase[shortURL] = req.body.longURL;
   res.redirect('/urls');
+});
+app.post("/login", (req, res) => {
+  const username = req.body.username;
+  res.cookie("username", username);
+  res.redirect("/urls");
 });
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
