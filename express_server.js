@@ -44,6 +44,16 @@ const newUser = (email, password) => {
   }
   return userId;
 };
+
+const checkEmail = email => {
+  for (let user of Object.values(users)) {
+    if (user.email === email) {
+      return true;
+    }
+  }
+  return false;
+};
+
 app.get("/", (req, res) => { // register handler on root path(home page), "/"
   res.send("Hello!");
 });
@@ -78,6 +88,10 @@ app.get("/register", (req, res) => {
   const templateVars = { user: users[req.cookies.user_id] };
   res.render("users_register", templateVars);
 });
+app.get("/login", (req, res) => {
+  const templateVars = { user: users[req.cookies.user_id] };
+  res.render("users_login", templateVars);
+});
 app.post("/urls/:shortURL/delete", (req, res) => {
   delete urlDatabase[req.params.shortURL];
   res.redirect("/urls")
@@ -98,10 +112,18 @@ app.post("/logout", (req, res) => {
 });
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
-  const userId = newUser(email, password);
-  res.cookie("user_id", userId);
-  res.redirect("/urls");
+  if (req.body.email === "" || req.body.password === "") {
+    res.status(400).send("Error: Some fields are incomplete");
+  }
+  if (checkEmail(email)) {
+    res.status(400).send ("Error: Email already exists");
+  } else {
+    const userId = newUser(email, password);
+    res.cookie("user_id", userId);
+    res.redirect("/urls");
+  }
 });
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
