@@ -22,6 +22,28 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@email.com", 
+    password: "first-user"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@email.com", 
+    password: "second-user"
+  }
+};
+
+const newUser = (email, password) => {
+  const userId = generateRandomString();
+  users[userId] = {
+    id: userId,
+    email,
+    password,
+  }
+  return userId;
+};
 app.get("/", (req, res) => { // register handler on root path(home page), "/"
   res.send("Hello!");
 });
@@ -72,6 +94,12 @@ app.post("/login", (req, res) => {
 });
 app.post("/logout", (req, res) => {
   res.clearCookie("username");
+  res.redirect("/urls");
+});
+app.post("/register", (req, res) => {
+  const { email, password } = req.body;
+  const userId = newUser(email, password);
+  res.cookie("user_id", userId);
   res.redirect("/urls");
 });
 app.listen(PORT, () => {
