@@ -13,6 +13,7 @@
     <% if (user) { %>
       <!-- Logout Link -->
       <form action="/logout" method="POST">
+        <label for="user" style="margin: 1em">Logged In As: <%= user.email %></label>
         <button class="btn btn-primary" type="submit">Logout</button>
       </form>
     <% } else { %>
