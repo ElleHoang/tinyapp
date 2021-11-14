@@ -45,10 +45,12 @@ const newUser = (email, password) => {
   return userId;
 };
 
-const checkEmail = email => {
-  for (let user of Object.values(users)) {
-    if (user.email === email) {
-      return true;
+const checkEmail = (email, users) => {
+  for (const user in users) {
+    for (const prop in users[user]) {
+      if (users[user].email === email) {
+        return true;
+      }
     }
   }
   return false;
@@ -102,9 +104,21 @@ app.post("/urls/:id", (req, res) => {
   res.redirect('/urls');
 });
 app.post("/login", (req, res) => {
-  const username = req.body.username;
-  res.cookie("username", username);
-  res.redirect("/urls");
+  if (!checkEmail(req.body.email, users)) {
+    res.status(403).send("Error: User does not exist");
+  } else if (checkEmail(req.body.email, users)) {
+    for (const user in users) {
+      for (const prop in users[user]) {
+        if (users[user].email === req.body.email && users[user].password !== req.body.password) {
+            res.status(403).send("Error: Invalid password");
+        } else {
+          const userId = users[user].id;
+          res.cookie("user_id", userId);
+          res.redirect("/urls");
+        }
+      }
+    }
+  }
 });
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
