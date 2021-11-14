@@ -18,8 +18,14 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs"); // tells Express app to use EJS as templating engine
 
 const urlDatabase = {
-  "b2xVn2": "http://www.lighthouselabs.ca",
-  "9sm5xK": "http://www.google.com"
+  "b2xVn2": {
+    longURL: "http://www.lighthouselabs.ca",
+    userID: "aj48lW"
+  },
+  "9sm5xK": {
+    longURL: "http://www.google.com",
+    userID: "aJ48lW"
+  }
 };
 
 const users = { 
@@ -36,13 +42,13 @@ const users = {
 };
 
 const newUser = (email, password) => {
-  const userId = generateRandomString();
-  users[userId] = {
-    id: userId,
+  const userStr = generateRandomString();
+  users[userStr] = {
+    id: userStr,
     email,
     password,
   }
-  return userId;
+  return userStr;
 };
 
 const checkEmail = (email, users) => {
@@ -125,8 +131,8 @@ app.post("/login", (req, res) => {
         if (users[user].email === req.body.email && users[user].password !== req.body.password) {
             res.status(403).send("Error: Invalid password");
         } else {
-          const userId = users[user].id;
-          res.cookie("user_id", userId);
+          const userStr = users[user].id;
+          res.cookie("user_id", userStr);
           res.redirect("/urls");
         }
       }
@@ -145,8 +151,8 @@ app.post("/register", (req, res) => {
   if (checkEmail(email)) {
     res.status(400).send ("Error: Email already exists");
   } else {
-    const userId = newUser(email, password);
-    res.cookie("user_id", userId);
+    const userStr = newUser(email, password);
+    res.cookie("user_id", userStr);
     res.redirect("/urls");
   }
 });
