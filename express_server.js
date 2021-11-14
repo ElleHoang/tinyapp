@@ -29,15 +29,15 @@ const urlDatabase = {
 };
 
 const users = { 
-  "userRandomID": {
-    id: "userRandomID", 
+  "aJ48lW": {
+    id: "aJ48lW", 
     email: "user@email.com", 
-    password: "first-user"
+    password: "1"
   },
  "user2RandomID": {
     id: "user2RandomID", 
     email: "user2@email.com", 
-    password: "second-user"
+    password: "2"
   }
 };
 
@@ -62,6 +62,16 @@ const checkEmail = (email, users) => {
   return false;
 };
 
+const urlsForUser = (id) => {
+  const userURL = {};
+  for (const shortURL in urlDatabase) {
+    if (urlDatabase[shortURL].userID === id) {
+      userURL[shortURL] = urlDatabase[shortURL];
+    }
+  }
+  return userURL;
+};
+
 app.get("/", (req, res) => { // register handler on root path(home page), "/"
   res.send("Hello!");
 });
@@ -72,8 +82,12 @@ app.get("/hello", (req, res) => { // response can contain HTML code, which rende
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
+  const templateVars = { urls: urlsForUser(req.cookies["user_id"]), user: users[req.cookies["user_id"]] };
+  if (!templateVars.user["id"]) {
+    res.status(401).send("Error: Register or Login to view page");
+  } else {
     res.render("urls_index", templateVars);
+  }
 });
 app.get("/urls/new", (req, res) => {
   const templateVars = { user: users[req.cookies["user_id"]]};
@@ -118,9 +132,13 @@ app.post("/urls/:shortURL/delete", (req, res) => {
   res.redirect("/urls")
 });
 app.post("/urls/:id", (req, res) => {
-  const shortURL = req.params.id;
-  urlDatabase[shortURL]["longURL"] = req.body.longURL;
-  res.redirect('/urls');
+  if (req.cookies["user_id"] !== urlDatabase[req.params.shortURL].userID) {
+    res.status(401).send("Error: Unautorized action");
+  } else {
+    const shortURL = req.params.id;
+    urlDatabase[shortURL]["longURL"] = req.body.longURL;
+    res.redirect('/urls');
+  }
 });
 app.post("/login", (req, res) => {
   let inputEmail = req.body.email;
@@ -140,7 +158,7 @@ app.post("/login", (req, res) => {
 });
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
-  res.redirect("/urls");
+  res.redirect("/login");
 });
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
