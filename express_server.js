@@ -73,11 +73,7 @@ app.get("/hello", (req, res) => { // response can contain HTML code, which rende
 });
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
-  if (!templateVars.user) {
-    res.redirect("/login");
-  } else {
     res.render("urls_index", templateVars);
-  }
 });
 app.get("/urls/new", (req, res) => {
   const templateVars = { user: users[req.cookies["user_id"]]};
@@ -102,8 +98,12 @@ app.post("/urls", (req, res) => {
   }
 });
 app.get("/u/:shortURL", (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
-  res.redirect(longURL);
+  if (urlDatabase[req.params.shortURL] === undefined) {
+    res.status(404).send("Error: shortURL not found")
+  } else {
+    const longURL = urlDatabase[req.params.shortURL].longURL;
+    res.redirect(longURL.longURL);
+  }
 });
 app.get("/register", (req, res) => {
   const templateVars = { user: users[req.cookies.user_id] };
@@ -119,7 +119,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 });
 app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
-  urlDatabase[shortURL] = req.body.longURL;
+  urlDatabase[shortURL]["longURL"] = req.body.longURL;
   res.redirect('/urls');
 });
 app.post("/login", (req, res) => {
