@@ -42,7 +42,7 @@ const users = {
 };
 
 const newUser = (email, password) => {
-  let userStr = generateRandomString();
+  const userStr = generateRandomString();
   users[userStr] = {
     id: userStr,
     email,
@@ -88,7 +88,7 @@ app.get("/urls/new", (req, res) => {
   }
 });
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies["user_id"]] };
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars)
 });
 app.post("/urls", (req, res) => {
@@ -97,7 +97,7 @@ app.post("/urls", (req, res) => {
     res.status(403).send("Error: Action is prohibited");
   } else {
     const shortURL = generateRandomString();
-    urlDatabase[shortURL] = req.body.longURL;
+    urlDatabase[shortURL] = { longURL: req.body.longURL };
     res.redirect(`/urls/${shortURL}`);
   }
 });
@@ -129,17 +129,13 @@ app.post("/login", (req, res) => {
     res.status(403).send("Error: User does not exist");
   } else if (checkEmail(inputEmail, users)) {
     for (const user in users) {
-      //for (const prop in users[user]) {
-        if (users[user].email === inputEmail && users[user].password === inputPass) {
-          let userStr = users[user].id;
-          res.cookie("user_id", userStr);
-          return res.redirect("/urls");  
-        }
+      if (users[user].email === inputEmail && users[user].password === inputPass) {
+        let userStr = users[user].id;
+        res.cookie("user_id", userStr);
+        return res.redirect("/urls");  
       }
-      res.status(403).send("Error: Invalid password");
-        
-      //}
-    
+    }
+    res.status(403).send("Error: Invalid password");
   }
 });
 app.post("/logout", (req, res) => {
@@ -154,7 +150,7 @@ app.post("/register", (req, res) => {
   if (checkEmail(email)) {
     res.status(400).send ("Error: Email already exists");
   } else {
-    let userStr = newUser(email, password);
+    const userStr = newUser(email, password);
     res.cookie("user_id", userStr);
     res.redirect("/urls");
   }
