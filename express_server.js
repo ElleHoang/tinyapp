@@ -128,16 +128,20 @@ app.get("/login", (req, res) => {
   res.render("users_login", templateVars);
 });
 app.post("/urls/:shortURL/delete", (req, res) => {
-  delete urlDatabase[req.params.shortURL];
-  res.redirect("/urls")
+  if (req.cookies["user_id"] === urlDatabase[req.params.shortURL].userID) {
+    delete urlDatabase[req.params.shortURL];
+    res.redirect("/urls")
+  } else {
+    res.status(401).send("Error: Unauthorized action");
+  }
 });
 app.post("/urls/:id", (req, res) => {
-  if (req.cookies["user_id"] !== urlDatabase[req.params.shortURL].userID) {
-    res.status(401).send("Error: Unautorized action");
-  } else {
+  if (req.cookies["user_id"] === urlDatabase[req.params.shortURL].userID) {
     const shortURL = req.params.id;
     urlDatabase[shortURL]["longURL"] = req.body.longURL;
     res.redirect('/urls');
+  } else {
+    res.status(401).send("Error: Unauthorized action");
   }
 });
 app.post("/login", (req, res) => {
