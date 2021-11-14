@@ -42,7 +42,7 @@ const users = {
 };
 
 const newUser = (email, password) => {
-  const userStr = generateRandomString();
+  let userStr = generateRandomString();
   users[userStr] = {
     id: userStr,
     email,
@@ -53,11 +53,11 @@ const newUser = (email, password) => {
 
 const checkEmail = (email, users) => {
   for (const user in users) {
-    for (const prop in users[user]) {
+    //for (const prop in users[user]) {
       if (users[user].email === email) {
         return true;
       }
-    }
+    //}
   }
   return false;
 };
@@ -123,20 +123,23 @@ app.post("/urls/:id", (req, res) => {
   res.redirect('/urls');
 });
 app.post("/login", (req, res) => {
-  if (!checkEmail(req.body.email, users)) {
+  let inputEmail = req.body.email;
+  let inputPass = req.body.password;
+  if (!checkEmail(inputEmail, users)) {
     res.status(403).send("Error: User does not exist");
-  } else if (checkEmail(req.body.email, users)) {
+  } else if (checkEmail(inputEmail, users)) {
     for (const user in users) {
-      for (const prop in users[user]) {
-        if (users[user].email === req.body.email && users[user].password !== req.body.password) {
-            res.status(403).send("Error: Invalid password");
-        } else {
-          const userStr = users[user].id;
+      //for (const prop in users[user]) {
+        if (users[user].email === inputEmail && users[user].password === inputPass) {
+          let userStr = users[user].id;
           res.cookie("user_id", userStr);
-          res.redirect("/urls");
+          return res.redirect("/urls");  
         }
       }
-    }
+      res.status(403).send("Error: Invalid password");
+        
+      //}
+    
   }
 });
 app.post("/logout", (req, res) => {
@@ -151,7 +154,7 @@ app.post("/register", (req, res) => {
   if (checkEmail(email)) {
     res.status(400).send ("Error: Email already exists");
   } else {
-    const userStr = newUser(email, password);
+    let userStr = newUser(email, password);
     res.cookie("user_id", userStr);
     res.redirect("/urls");
   }
