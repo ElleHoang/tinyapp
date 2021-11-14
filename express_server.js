@@ -67,20 +67,33 @@ app.get("/hello", (req, res) => { // response can contain HTML code, which rende
 });
 app.get("/urls", (req, res) => {
   const templateVars = { urls: urlDatabase, user: users[req.cookies["user_id"]] };
-  res.render("urls_index", templateVars);
+  if (!templateVars.user) {
+    res.redirect("/login");
+  } else {
+    res.render("urls_index", templateVars);
+  }
 });
 app.get("/urls/new", (req, res) => {
   const templateVars = { user: users[req.cookies["user_id"]]};
-  res.render("urls_new", templateVars);
+  if (!templateVars.user) {
+    res.redirect("/login");
+  } else {
+    res.render("urls_new", templateVars)
+  }
 });
 app.get("/urls/:shortURL", (req, res) => {
   const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL], user: users[req.cookies["user_id"]] };
   res.render("urls_show", templateVars)
 });
 app.post("/urls", (req, res) => {
-  const shortURL = generateRandomString();
-  urlDatabase[shortURL] = req.body.longURL;
-  res.redirect(`/urls/${shortURL}`);
+  const templateVars = { user: users[req.cookies["user_id"]]};
+  if (!templateVars.user) {
+    res.status(403).send("Error: Action is prohibited");
+  } else {
+    const shortURL = generateRandomString();
+    urlDatabase[shortURL] = req.body.longURL;
+    res.redirect(`/urls/${shortURL}`);
+  }
 });
 app.get("/u/:shortURL", (req, res) => {
   const longURL = urlDatabase[req.params.shortURL];
