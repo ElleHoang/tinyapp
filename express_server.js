@@ -3,6 +3,7 @@ const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
+const bcrypt = require("bcryptjs");
 
 function generateRandomString() {
   let shortURL = '';
@@ -32,22 +33,25 @@ const users = {
   "aJ48lW": {
     id: "aJ48lW", 
     email: "user@email.com", 
-    password: "1"
+    password: bcrypt.hashSync("1", 10)
   },
  "user2RandomID": {
     id: "user2RandomID", 
     email: "user2@email.com", 
-    password: "2"
+    password: bcrypt.hashSync("2", 10)
   }
 };
 
 const newUser = (email, password) => {
+  //console.log(`********* Password: ${password} *********`);
+  const hashPassword = bcrypt.hashSync(password, 10);
   const userStr = generateRandomString();
   users[userStr] = {
     id: userStr,
     email,
-    password,
+    password: hashPassword
   }
+  //console.log (`******** Hash: ${hashPassword} *********`);
   return userStr;
 };
 
@@ -151,7 +155,7 @@ app.post("/login", (req, res) => {
     res.status(403).send("Error: User does not exist");
   } else if (checkEmail(inputEmail, users)) {
     for (const user in users) {
-      if (users[user].email === inputEmail && users[user].password === inputPass) {
+      if (users[user].email === inputEmail && bcrypt.compareSync(inputPass, users[user].password)) {
         let userStr = users[user].id;
         res.cookie("user_id", userStr);
         return res.redirect("/urls");  
