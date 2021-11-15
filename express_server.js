@@ -125,8 +125,11 @@ app.get("/urls/:id", (req, res) => {
   if (templateVars.longURL === Error) {
     res.status(404).send("Error: Url does not exist");
   }
-  if (!templateVars.user || templateVars.user !== templateVars.shortURL) {
-    res.status(401).send("Error: Unauthorized action");
+  if (req.session.user_id !== urlDatabase[req.params.id].userID) {
+  res.status(401).send("Error: Unauthorized action");
+  }
+  if (!templateVars.user) {
+  res.status(401).send("Error: Unauthorized action");
   }
   res.render("urls_show", templateVars);
 });
