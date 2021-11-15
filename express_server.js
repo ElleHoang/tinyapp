@@ -60,10 +60,10 @@ const generateRandomString = () => {
   return shortURL;
 };
 
-const checkEmail = (email, users) => {
-  for (const user in users) {
-    if (users[user].email === email) {
-      return true;
+const getUserByEmail = (email, userDatabase) => {
+  for (const user in userDatabase) {
+    if (userDatabase[user].email === email) {
+      return user;
     }
   }
   return false;
@@ -168,7 +168,7 @@ app.post("/register", (req, res) => {
   if (req.body.email === "" || req.body.password === "") {
     res.status(400).send("Error: Some fields are incomplete");
   }
-  if (checkEmail(email)) {
+  if (getUserByEmail(email)) {
     res.status(400).send("Error: Email already exists");
   } else {
     const userStr = newUser(email, password);
@@ -186,9 +186,9 @@ app.get("/login", (req, res) => {
 app.post("/login", (req, res) => {
   let inputEmail = req.body.email;
   let inputPass = req.body.password;
-  if (!checkEmail(inputEmail, users)) {
+  if (!getUserByEmail(inputEmail, users)) {
     res.status(403).send("Error: User does not exist");
-  } else if (checkEmail(inputEmail, users)) {
+  } else if (getUserByEmail(inputEmail, users)) {
     for (const user in users) {
       if (users[user].email === inputEmail && bcrypt.compareSync(inputPass, users[user].password)) {
         let userStr = users[user].id;
