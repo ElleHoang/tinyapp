@@ -1,7 +1,7 @@
 const express = require("express");
 const { getUserByEmail } = require("./helpers");
 const app = express();
-const PORT = 8080; // default port 8080
+const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
@@ -11,7 +11,7 @@ app.use(cookieSession({
   keys: ["cookie-session-key-1", "cookie-session-key-2"]
 }));
 app.use(bodyParser.urlencoded({extended: true}));
-app.set("view engine", "ejs"); // tells Express app to use EJS as templating engine
+app.set("view engine", "ejs");
 
 const urlDatabase = {
   "b2xVn2": {
@@ -42,7 +42,6 @@ const users = {
 };
 
 const newUser = (email, password) => {
-  //console.log(`********* Password: ${password} *********`);
   const hashPassword = bcrypt.hashSync(password, 10);
   const userStr = generateRandomString();
   users[userStr] = {
@@ -50,7 +49,6 @@ const newUser = (email, password) => {
     email,
     password: hashPassword
   };
-  //console.log (`******** Hash: ${hashPassword} *********`);
   return userStr;
 };
 
@@ -76,16 +74,17 @@ const urlsForUser = (id) => {
 };
 
 /*** ROOT & TEST ROUTES ***/
-app.get("/", (req, res) => { // register handler on root path(home page), "/"
+
+app.get("/", (req, res) => {
   const templateVars = { user: users[req.session.user_id] };
   res.render("users_login", templateVars);
 });
 
-app.get("/urls.json", (req, res) => { // add route/endpoint
+app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-app.get("/hello", (req, res) => { // response can contain HTML code, which render in client browser
+app.get("/hello", (req, res) => {
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
 
