@@ -21,6 +21,10 @@ const urlDatabase = {
   "9sm5xK": {
     longURL: "http://www.google.com",
     userID: "aJ48lW"
+  },
+  "1U2r3L": {
+    longURL: "http://www.dfakeurlh.com",
+    userID: "aJ48lW"
   }
 };
 
@@ -73,7 +77,8 @@ const urlsForUser = (id) => {
 
 /*** ROOT & TEST ROUTES ***/
 app.get("/", (req, res) => { // register handler on root path(home page), "/"
-  res.send("Hello!");
+  const templateVars = { user: users[req.session.user_id] };
+  res.render("users_login", templateVars);
 });
 
 app.get("/urls.json", (req, res) => { // add route/endpoint
@@ -115,18 +120,15 @@ app.get("/urls/new", (req, res) => {
   }
 });
 
-app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id] };
-  res.render("urls_show", templateVars);
-});
-
-app.post("/urls/:shortURL/delete", (req, res) => {
-  if (req.session.user_id === urlDatabase[req.params.shortURL].userID) {
-    delete urlDatabase[req.params.shortURL];
-    res.redirect("/urls");
-  } else {
+app.get("/urls/:id", (req, res) => {
+  const templateVars = { shortURL: req.params.id, longURL: urlDatabase[req.params.id].longURL, user: users[req.session.user_id] };
+  if (templateVars.longURL === Error) {
+    res.status(404).send("Error: Url does not exist");
+  }
+  if (!templateVars.user || templateVars.user !== templateVars.shortURL) {
     res.status(401).send("Error: Unauthorized action");
   }
+  res.render("urls_show", templateVars);
 });
 
 app.post("/urls/:id", (req, res) => {
@@ -138,6 +140,16 @@ app.post("/urls/:id", (req, res) => {
     res.status(401).send("Error: Unauthorized action");
   }
 });
+
+app.post("/urls/:id/delete", (req, res) => {
+  if (req.session.user_id === urlDatabase[req.params.id].userID) {
+    delete urlDatabase[req.params.id];
+    res.redirect("/urls");
+  } else {
+    res.status(401).send("Error: Unauthorized action");
+  }
+});
+
 
 app.get("/u/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL] === undefined) {
