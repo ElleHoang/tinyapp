@@ -106,17 +106,17 @@ app.post("/urls", (req, res) => {
     res.status(403).send("Error: Action is prohibited");
   } else {
     const shortURL = generateRandomString();
-    urlDatabase[shortURL] = { longURL: req.body.longURL };
+    urlDatabase[shortURL] = { longURL: req.body.longURL, userID: req.session.user_id };
     res.redirect(`/urls/${shortURL}`);
   }
 });
 
 app.get("/urls/new", (req, res) => {
   const templateVars = { user: users[req.session.user_id]};
-  if (!templateVars.user) {
-    res.redirect("/login");
-  } else {
+  if (templateVars.user) {
     res.render("urls_new", templateVars);
+  } else {
+    res.redirect("/login");
   }
 });
 
@@ -135,9 +135,8 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.post("/urls/:id", (req, res) => {
-  const shortURL = req.params.id;
-  if (req.session.user_id === urlDatabase[shortURL].userID) {
-    urlDatabase[shortURL]["longURL"] = req.body.longURL;
+  if (req.session.user_id === urlDatabase[req.params.id].userID) {
+    urlDatabase[req.params.id].longURL = req.body.longURL;
     res.redirect('/urls');
   } else {
     res.status(401).send("Error: Unauthorized action");
@@ -154,12 +153,12 @@ app.post("/urls/:id/delete", (req, res) => {
 });
 
 
-app.get("/u/:shortURL", (req, res) => {
-  if (urlDatabase[req.params.shortURL] === undefined) {
-    res.status(404).send("Error: shortURL not found");
+app.get("/u/:id", (req, res) => {
+  if (!urlDatabase[req.params.id].longURL) {
+    res.status(404).send("Error: Url does not exist");
   } else {
-    const longURL = urlDatabase[req.params.shortURL].longURL;
-    res.redirect(longURL.longURL);
+    const longURL = urlDatabase[req.params.id].longURL;
+    res.redirect(longURL);
   }
 });
 
