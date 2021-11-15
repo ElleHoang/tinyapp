@@ -5,15 +5,6 @@ const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const bcrypt = require("bcryptjs");
 
-function generateRandomString() {
-  let shortURL = '';
-  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-  for (let i = 0; i < 6; i++) {
-    shortURL += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return shortURL;
-};
-
 app.use(cookieParser());
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs"); // tells Express app to use EJS as templating engine
@@ -55,6 +46,17 @@ const newUser = (email, password) => {
   return userStr;
 };
 
+/*** HELPER FUNCTIONS ***/
+
+function generateRandomString() {
+  let shortURL = '';
+  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+  for (let i = 0; i < 6; i++) {
+    shortURL += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return shortURL;
+};
+
 const checkEmail = (email, users) => {
   for (const user in users) {
     //for (const prop in users[user]) {
@@ -76,35 +78,30 @@ const urlsForUser = (id) => {
   return userURL;
 };
 
+/*** ROOT & TEST ROUTES ***/
 app.get("/", (req, res) => { // register handler on root path(home page), "/"
   res.send("Hello!");
 });
+
 app.get("/urls.json", (req, res) => { // add route/endpoint
   res.json(urlDatabase);
 });
+
 app.get("/hello", (req, res) => { // response can contain HTML code, which render in client browser
   res.send("<html><body>Hello <b>World</b></body></html>\n");
 });
+
+/*** URLs ROUTES ***/
+
 app.get("/urls", (req, res) => {
-  const templateVars = { urls: urlsForUser(req.cookies["user_id"]), user: users[req.cookies["user_id"]] };
-  if (!templateVars.user["id"]) {
+  if (!users[req.cookies["user_id"]]) {
     res.status(401).send("Error: Register or Login to view page");
   } else {
+    const templateVars = { urls: urlsForUser(req.cookies["user_id"]), user: users[req.cookies["user_id"]] };
     res.render("urls_index", templateVars);
   }
 });
-app.get("/urls/new", (req, res) => {
-  const templateVars = { user: users[req.cookies["user_id"]]};
-  if (!templateVars.user) {
-    res.redirect("/login");
-  } else {
-    res.render("urls_new", templateVars)
-  }
-});
-app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]] };
-  res.render("urls_show", templateVars)
-});
+
 app.post("/urls", (req, res) => {
   const templateVars = { user: users[req.cookies["user_id"]]};
   if (!templateVars.user) {
@@ -115,22 +112,21 @@ app.post("/urls", (req, res) => {
     res.redirect(`/urls/${shortURL}`);
   }
 });
-app.get("/u/:shortURL", (req, res) => {
-  if (urlDatabase[req.params.shortURL] === undefined) {
-    res.status(404).send("Error: shortURL not found")
+
+app.get("/urls/new", (req, res) => {
+  const templateVars = { user: users[req.cookies["user_id"]]};
+  if (!templateVars.user) {
+    res.redirect("/login");
   } else {
-    const longURL = urlDatabase[req.params.shortURL].longURL;
-    res.redirect(longURL.longURL);
+    res.render("urls_new", templateVars)
   }
 });
-app.get("/register", (req, res) => {
-  const templateVars = { user: users[req.cookies.user_id] };
-  res.render("users_register", templateVars);
+
+app.get("/urls/:shortURL", (req, res) => {
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]] };
+  res.render("urls_show", templateVars)
 });
-app.get("/login", (req, res) => {
-  const templateVars = { user: users[req.cookies.user_id] };
-  res.render("users_login", templateVars);
-});
+
 app.post("/urls/:shortURL/delete", (req, res) => {
   if (req.cookies["user_id"] === urlDatabase[req.params.shortURL].userID) {
     delete urlDatabase[req.params.shortURL];
@@ -139,14 +135,52 @@ app.post("/urls/:shortURL/delete", (req, res) => {
     res.status(401).send("Error: Unauthorized action");
   }
 });
+
 app.post("/urls/:id", (req, res) => {
-  if (req.cookies["user_id"] === urlDatabase[req.params.shortURL].userID) {
-    const shortURL = req.params.id;
+  const shortURL = req.params.id;
+  if (req.cookies["user_id"] === urlDatabase[shortURL].userID) {
     urlDatabase[shortURL]["longURL"] = req.body.longURL;
     res.redirect('/urls');
   } else {
     res.status(401).send("Error: Unauthorized action");
   }
+});
+
+app.get("/u/:shortURL", (req, res) => {
+  if (urlDatabase[req.params.shortURL] === undefined) {
+    res.status(404).send("Error: shortURL not found")
+  } else {
+    const longURL = urlDatabase[req.params.shortURL].longURL;
+    res.redirect(longURL.longURL);
+  }
+});
+
+/*** REGISTER ROUTES ***/
+
+app.get("/register", (req, res) => {
+  const templateVars = { user: users[req.cookies.user_id] };
+  res.render("users_register", templateVars);
+});
+
+app.post("/register", (req, res) => {
+  const { email, password } = req.body;
+  if (req.body.email === "" || req.body.password === "") {
+    res.status(400).send("Error: Some fields are incomplete");
+  }
+  if (checkEmail(email)) {
+    res.status(400).send ("Error: Email already exists");
+  } else {
+    const userStr = newUser(email, password);
+    res.cookie("user_id", userStr);
+    res.redirect("/urls");
+  }
+});
+
+/*** LOGIN ROUTES ***/
+
+app.get("/login", (req, res) => {
+  const templateVars = { user: users[req.cookies.user_id] };
+  res.render("users_login", templateVars);
 });
 app.post("/login", (req, res) => {
   let inputEmail = req.body.email;
@@ -164,23 +198,15 @@ app.post("/login", (req, res) => {
     res.status(403).send("Error: Invalid password");
   }
 });
+
+/*** LOGOUT ROUTE ***/
+
 app.post("/logout", (req, res) => {
   res.clearCookie("user_id");
   res.redirect("/login");
 });
-app.post("/register", (req, res) => {
-  const { email, password } = req.body;
-  if (req.body.email === "" || req.body.password === "") {
-    res.status(400).send("Error: Some fields are incomplete");
-  }
-  if (checkEmail(email)) {
-    res.status(400).send ("Error: Email already exists");
-  } else {
-    const userStr = newUser(email, password);
-    res.cookie("user_id", userStr);
-    res.redirect("/urls");
-  }
-});
+
+/*** SERVER STARTUP ***/
 
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
