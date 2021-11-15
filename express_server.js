@@ -1,4 +1,5 @@
 const express = require("express");
+const { getUserByEmail } = require("./helpers");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
@@ -58,15 +59,6 @@ const generateRandomString = () => {
     shortURL += chars[Math.floor(Math.random() * chars.length)];
   }
   return shortURL;
-};
-
-const getUserByEmail = (email, userDatabase) => {
-  for (const user in userDatabase) {
-    if (userDatabase[user].email === email) {
-      return user;
-    }
-  }
-  return false;
 };
 
 const urlsForUser = (id) => {
