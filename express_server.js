@@ -2,10 +2,13 @@ const express = require("express");
 const app = express();
 const PORT = 8080; // default port 8080
 const bodyParser = require("body-parser");
-const cookieParser = require("cookie-parser");
+const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 
-app.use(cookieParser());
+app.use(cookieSession({
+  name: "session",
+  keys: ["cookie-session-key-1", "cookie-session-key-2"]
+}));
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs"); // tells Express app to use EJS as templating engine
 
@@ -20,15 +23,15 @@ const urlDatabase = {
   }
 };
 
-const users = { 
+const users = {
   "aJ48lW": {
-    id: "aJ48lW", 
-    email: "user@email.com", 
+    id: "aJ48lW",
+    email: "user@email.com",
     password: bcrypt.hashSync("1", 10)
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@email.com", 
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@email.com",
     password: bcrypt.hashSync("2", 10)
   }
 };
@@ -41,14 +44,14 @@ const newUser = (email, password) => {
     id: userStr,
     email,
     password: hashPassword
-  }
+  };
   //console.log (`******** Hash: ${hashPassword} *********`);
   return userStr;
 };
 
 /*** HELPER FUNCTIONS ***/
 
-function generateRandomString() {
+const generateRandomString = () => {
   let shortURL = '';
   const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
   for (let i = 0; i < 6; i++) {
@@ -59,11 +62,9 @@ function generateRandomString() {
 
 const checkEmail = (email, users) => {
   for (const user in users) {
-    //for (const prop in users[user]) {
-      if (users[user].email === email) {
-        return true;
-      }
-    //}
+    if (users[user].email === email) {
+      return true;
+    }
   }
   return false;
 };
@@ -94,16 +95,16 @@ app.get("/hello", (req, res) => { // response can contain HTML code, which rende
 /*** URLs ROUTES ***/
 
 app.get("/urls", (req, res) => {
-  if (!users[req.cookies["user_id"]]) {
+  if (!users[req.session.user_id]) {
     res.status(401).send("Error: Register or Login to view page");
   } else {
-    const templateVars = { urls: urlsForUser(req.cookies["user_id"]), user: users[req.cookies["user_id"]] };
+    const templateVars = { urls: urlsForUser(req.session.user_id), user: users[req.session.user_id] };
     res.render("urls_index", templateVars);
   }
 });
 
 app.post("/urls", (req, res) => {
-  const templateVars = { user: users[req.cookies["user_id"]]};
+  const templateVars = { user: users[req.session.user_id]};
   if (!templateVars.user) {
     res.status(403).send("Error: Action is prohibited");
   } else {
@@ -114,23 +115,23 @@ app.post("/urls", (req, res) => {
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { user: users[req.cookies["user_id"]]};
+  const templateVars = { user: users[req.session.user_id]};
   if (!templateVars.user) {
     res.redirect("/login");
   } else {
-    res.render("urls_new", templateVars)
+    res.render("urls_new", templateVars);
   }
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.cookies["user_id"]] };
-  res.render("urls_show", templateVars)
+  const templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL, user: users[req.session.user_id] };
+  res.render("urls_show", templateVars);
 });
 
 app.post("/urls/:shortURL/delete", (req, res) => {
-  if (req.cookies["user_id"] === urlDatabase[req.params.shortURL].userID) {
+  if (req.session.user_id === urlDatabase[req.params.shortURL].userID) {
     delete urlDatabase[req.params.shortURL];
-    res.redirect("/urls")
+    res.redirect("/urls");
   } else {
     res.status(401).send("Error: Unauthorized action");
   }
@@ -138,7 +139,7 @@ app.post("/urls/:shortURL/delete", (req, res) => {
 
 app.post("/urls/:id", (req, res) => {
   const shortURL = req.params.id;
-  if (req.cookies["user_id"] === urlDatabase[shortURL].userID) {
+  if (req.session.user_id === urlDatabase[shortURL].userID) {
     urlDatabase[shortURL]["longURL"] = req.body.longURL;
     res.redirect('/urls');
   } else {
@@ -148,7 +149,7 @@ app.post("/urls/:id", (req, res) => {
 
 app.get("/u/:shortURL", (req, res) => {
   if (urlDatabase[req.params.shortURL] === undefined) {
-    res.status(404).send("Error: shortURL not found")
+    res.status(404).send("Error: shortURL not found");
   } else {
     const longURL = urlDatabase[req.params.shortURL].longURL;
     res.redirect(longURL.longURL);
@@ -158,7 +159,7 @@ app.get("/u/:shortURL", (req, res) => {
 /*** REGISTER ROUTES ***/
 
 app.get("/register", (req, res) => {
-  const templateVars = { user: users[req.cookies.user_id] };
+  const templateVars = { user: users[req.session["user_id"]] };
   res.render("users_register", templateVars);
 });
 
@@ -168,10 +169,10 @@ app.post("/register", (req, res) => {
     res.status(400).send("Error: Some fields are incomplete");
   }
   if (checkEmail(email)) {
-    res.status(400).send ("Error: Email already exists");
+    res.status(400).send("Error: Email already exists");
   } else {
     const userStr = newUser(email, password);
-    res.cookie("user_id", userStr);
+    req.session.user_id = userStr;
     res.redirect("/urls");
   }
 });
@@ -179,7 +180,7 @@ app.post("/register", (req, res) => {
 /*** LOGIN ROUTES ***/
 
 app.get("/login", (req, res) => {
-  const templateVars = { user: users[req.cookies.user_id] };
+  const templateVars = { user: users[req.session.user_id] };
   res.render("users_login", templateVars);
 });
 app.post("/login", (req, res) => {
@@ -191,8 +192,8 @@ app.post("/login", (req, res) => {
     for (const user in users) {
       if (users[user].email === inputEmail && bcrypt.compareSync(inputPass, users[user].password)) {
         let userStr = users[user].id;
-        res.cookie("user_id", userStr);
-        return res.redirect("/urls");  
+        req.session.user_id = userStr;
+        return res.redirect("/urls");
       }
     }
     res.status(403).send("Error: Invalid password");
@@ -202,7 +203,7 @@ app.post("/login", (req, res) => {
 /*** LOGOUT ROUTE ***/
 
 app.post("/logout", (req, res) => {
-  res.clearCookie("user_id");
+  req.session = null;
   res.redirect("/login");
 });
 
