@@ -77,7 +77,11 @@ const urlsForUser = (id) => {
 
 app.get("/", (req, res) => {
   const templateVars = { user: users[req.session.user_id] };
-  res.render("users_login", templateVars);
+  if (!templateVars.user) {
+    res.redirect("/login");
+  } else {
+  res.redirect("/urls");
+  }
 });
 
 app.get("/urls.json", (req, res) => {
@@ -170,10 +174,11 @@ app.get("/register", (req, res) => {
 
 app.post("/register", (req, res) => {
   const { email, password } = req.body;
-  if (req.body.email === "" || req.body.password === "") {
+  //if (req.body.email === "" || req.body.password === "") {
+  if (!email || !password) {  
     res.status(400).send("Error: Some fields are incomplete");
   }
-  if (getUserByEmail(email)) {
+  if (getUserByEmail(email, users)) {
     res.status(400).send("Error: Email already exists");
   } else {
     const userStr = newUser(email, password);
@@ -189,8 +194,8 @@ app.get("/login", (req, res) => {
   res.render("users_login", templateVars);
 });
 app.post("/login", (req, res) => {
-  let inputEmail = req.body.email;
-  let inputPass = req.body.password;
+  const inputEmail = req.body.email;
+  const inputPass = req.body.password;
   if (!getUserByEmail(inputEmail, users)) {
     res.status(403).send("Error: User does not exist");
   } else if (getUserByEmail(inputEmail, users)) {
