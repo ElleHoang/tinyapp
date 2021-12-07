@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
 const { getUserByEmail, newUser, generateRandomString, urlsForUser } = require("./helpers");
+const { urlDatabase, users } = require("./database");
 const app = express();
 const PORT = 8080;
 
@@ -12,34 +13,6 @@ app.use(cookieSession({
 }));
 app.use(bodyParser.urlencoded({extended: true}));
 app.set("view engine", "ejs");
-
-const urlDatabase = {
-  "b2xVn2": {
-    longURL: "http://www.lighthouselabs.ca",
-    userID: "aj48lW"
-  },
-  "9sm5xK": {
-    longURL: "http://www.google.com",
-    userID: "aJ48lW"
-  },
-  "1U2r3L": {
-    longURL: "http://www.dfakeurlh.com",
-    userID: "aJ48lW"
-  }
-};
-
-const users = {
-  "aJ48lW": {
-    id: "aJ48lW",
-    email: "user@email.com",
-    password: bcrypt.hashSync("1", 10)
-  },
-  "user2RandomID": {
-    id: "user2RandomID",
-    email: "user2@email.com",
-    password: bcrypt.hashSync("2", 10)
-  }
-};
 
 /*** ROOT & TEST ROUTES ***/
 
