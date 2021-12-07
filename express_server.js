@@ -1,10 +1,10 @@
 const express = require("express");
-const { getUserByEmail } = require("./helpers");
-const app = express();
-const PORT = 8080;
 const bodyParser = require("body-parser");
 const cookieSession = require("cookie-session");
 const bcrypt = require("bcryptjs");
+const { getUserByEmail, newUser, generateRandomString, urlsForUser } = require("./helpers");
+const app = express();
+const PORT = 8080;
 
 app.use(cookieSession({
   name: "session",
@@ -41,38 +41,6 @@ const users = {
   }
 };
 
-const newUser = (email, password) => {
-  const hashPassword = bcrypt.hashSync(password, 10);
-  const userStr = generateRandomString();
-  users[userStr] = {
-    id: userStr,
-    email,
-    password: hashPassword
-  };
-  return userStr;
-};
-
-/*** HELPER FUNCTIONS ***/
-
-const generateRandomString = () => {
-  let shortURL = '';
-  const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
-  for (let i = 0; i < 6; i++) {
-    shortURL += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return shortURL;
-};
-
-const urlsForUser = (id) => {
-  const userURL = {};
-  for (const shortURL in urlDatabase) {
-    if (urlDatabase[shortURL].userID === id) {
-      userURL[shortURL] = urlDatabase[shortURL];
-    }
-  }
-  return userURL;
-};
-
 /*** ROOT & TEST ROUTES ***/
 
 app.get("/", (req, res) => {
@@ -98,7 +66,7 @@ app.get("/urls", (req, res) => {
   if (!users[req.session.user_id]) {
     res.status(401).send("Error: Register or Login to view page");
   } else {
-    const templateVars = { urls: urlsForUser(req.session.user_id), user: users[req.session.user_id] };
+    const templateVars = { urls: urlsForUser(req.session.user_id, urlDatabase), user: users[req.session.user_id] };
     res.render("urls_index", templateVars);
   }
 });
@@ -191,7 +159,12 @@ app.post("/register", (req, res) => {
 
 app.get("/login", (req, res) => {
   const templateVars = { user: users[req.session.user_id] };
-  res.render("users_login", templateVars);
+  if (!templateVars.user) {
+    res.render("users_login", templateVars);
+  } else {
+    res.redirect("/urls");
+  }
+  
 });
 app.post("/login", (req, res) => {
   const inputEmail = req.body.email;
