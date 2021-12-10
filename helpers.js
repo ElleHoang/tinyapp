@@ -1,3 +1,6 @@
+const bcrypt = require("bcryptjs");
+const { users } = require("./database");
+
 const getUserByEmail = (email, userDatabase) => {
   for (const user in userDatabase) {
     if (userDatabase[user].email === email) {
